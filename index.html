@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LEDGER — CFA L1 Drill Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0C1210; --surface:#121A17; --surface2:#17211D; --line:#22302A;
+    --ink:#E9EFEA; --ink2:#9AABA1; --muted:#5F7168;
+    --amber:#E3A93C; --amber-dim:#8A6A2B;
+    --green:#46B583; --red:#D96257;
+    --g0:#1B2822; --g1:#22513E; --g2:#2E7A57; --g3:#3EA372; --g4:#5CCB92;
+    --radius:10px;
+    --serif:'Fraunces',Georgia,serif;
+    --mono:'IBM Plex Mono','SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    background:var(--bg); color:var(--ink); font-family:var(--mono);
+    font-size:14px; line-height:1.55; min-height:100vh;
+    background-image:
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:56px 56px;
+    background-position:-1px -1px;
+  }
+  body::after{content:'';position:fixed;inset:0;pointer-events:none;
+    background:radial-gradient(ellipse 90% 70% at 50% 0%, transparent 40%, var(--bg) 100%);}
+  .wrap{max-width:780px;margin:0 auto;padding:28px 20px 90px;position:relative;z-index:1}
+
+  /* ---------- header ---------- */
+  header{display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px solid var(--line);padding-bottom:18px;margin-bottom:22px;
+    animation:rise .5s ease both}
+  .wordmark{font-family:var(--serif);font-weight:700;font-size:26px;letter-spacing:.3px}
+  .wordmark em{font-style:normal;color:var(--amber)}
+  .sub{color:var(--muted);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase}
+  #authbox{font-size:11px}
+  #authbox input{background:var(--surface2);border:1px solid var(--line);border-radius:6px;
+    color:var(--ink);font-family:var(--mono);font-size:11.5px;padding:5px 8px;width:150px}
+  #authbox button{background:none;border:0;color:var(--amber);font-family:var(--mono);
+    font-size:11px;cursor:pointer;text-decoration:underline;padding:0;margin-left:6px}
+  #authbox .authmsg{color:var(--muted);margin-top:4px}
+
+  /* ---------- stat row ---------- */
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+  .stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+    padding:12px 14px;animation:rise .5s ease both}
+  .stat:nth-child(2){animation-delay:.06s}.stat:nth-child(3){animation-delay:.12s}.stat:nth-child(4){animation-delay:.18s}
+  .stat .k{color:var(--muted);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+  .stat .v{font-family:var(--serif);font-size:24px;font-weight:600}
+  .stat .v small{font-size:13px;color:var(--ink2);font-family:var(--mono)}
+
+  /* ---------- tabs ---------- */
+  nav{display:flex;gap:4px;margin-bottom:20px;border:1px solid var(--line);
+    border-radius:var(--radius);padding:4px;background:var(--surface);
+    animation:rise .5s .1s ease both}
+  nav button{flex:1;background:none;border:0;color:var(--ink2);font-family:var(--mono);
+    font-size:12.5px;letter-spacing:.08em;text-transform:uppercase;padding:9px 4px;
+    border-radius:7px;cursor:pointer;transition:all .18s}
+  nav button:hover{color:var(--ink)}
+  nav button.on{background:var(--surface2);color:var(--amber);box-shadow:inset 0 0 0 1px var(--line)}
+
+  .panel{animation:rise .4s ease both}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+
+  /* ---------- drill ---------- */
+  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+  .qmeta{display:flex;justify-content:space-between;color:var(--muted);font-size:11px;
+    letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+  .qmeta .box-badge{color:var(--amber-dim)}
+  .stem{font-family:var(--serif);font-size:19px;font-weight:500;line-height:1.5;margin-bottom:20px}
+  .choices{display:grid;gap:9px}
+  .choice{display:flex;gap:12px;align-items:flex-start;text-align:left;width:100%;
+    background:var(--surface2);border:1px solid var(--line);border-radius:8px;
+    padding:12px 14px;color:var(--ink);font-family:var(--mono);font-size:13.5px;
+    line-height:1.5;cursor:pointer;transition:border-color .15s, background .15s}
+  .choice:hover:not(:disabled){border-color:var(--amber-dim)}
+  .choice:disabled{cursor:default}
+  .choice .letter{color:var(--muted);font-weight:600;flex:none}
+  .choice.correct{border-color:var(--green);background:rgba(70,181,131,.08)}
+  .choice.correct .letter{color:var(--green)}
+  .choice.wrong{border-color:var(--red);background:rgba(217,98,87,.07)}
+  .choice.wrong .letter{color:var(--red)}
+  .verdict{margin-top:16px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;font-weight:600}
+  .verdict.ok{color:var(--green)} .verdict.no{color:var(--red)}
+  .explain{margin-top:10px;padding:14px 16px;border-left:2px solid var(--amber);
+    background:var(--surface2);border-radius:0 8px 8px 0;color:var(--ink2);font-size:13px}
+  .actions{margin-top:18px;display:flex;justify-content:flex-end}
+  .btn{background:var(--amber);color:#141007;border:0;border-radius:8px;font-family:var(--mono);
+    font-weight:600;font-size:13px;letter-spacing:.05em;padding:11px 22px;cursor:pointer;
+    transition:transform .12s, filter .12s}
+  .btn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+  .btn.ghost{background:none;color:var(--ink2);border:1px solid var(--line)}
+  .btn.ghost:hover{color:var(--ink);border-color:var(--muted)}
+  .progressbar{height:3px;background:var(--line);border-radius:2px;margin-bottom:18px;overflow:hidden}
+  .progressbar i{display:block;height:100%;background:var(--amber);border-radius:2px;transition:width .3s ease}
+
+  .done{text-align:center;padding:38px 20px}
+  .done h2{font-family:var(--serif);font-size:30px;margin-bottom:6px}
+  .done .score{color:var(--amber);font-family:var(--serif);font-size:52px;font-weight:700;margin:12px 0 4px}
+  .done p{color:var(--ink2);margin-bottom:6px}
+  .session-topics{margin:18px auto 8px;max-width:380px;text-align:left}
+  .session-topics .row{display:flex;justify-content:space-between;padding:6px 0;
+    border-bottom:1px dashed var(--line);font-size:13px}
+  .session-topics .row span:last-child{color:var(--ink2)}
+
+  .empty{text-align:center;padding:44px 20px;color:var(--ink2)}
+  .empty h2{font-family:var(--serif);color:var(--ink);font-size:24px;margin-bottom:8px}
+
+  /* ---------- stats panel ---------- */
+  h3.section{font-family:var(--serif);font-size:17px;font-weight:600;margin:22px 0 10px;color:var(--ink)}
+  h3.section:first-child{margin-top:0}
+  .bar-row{display:grid;grid-template-columns:150px 1fr 84px;gap:12px;align-items:center;
+    padding:7px 0;font-size:12.5px}
+  .bar-row .lbl{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .track{height:12px;background:var(--g0);border-radius:4px;overflow:hidden;position:relative}
+  .track i{display:block;height:100%;background:var(--amber);border-radius:4px 3px 3px 4px;min-width:2px;transition:width .5s ease}
+  .bar-row .num{color:var(--ink2);text-align:right;font-variant-numeric:tabular-nums}
+  .heat{display:flex;flex-wrap:wrap;gap:6px}
+  .cell{width:auto;min-width:0;padding:7px 10px;border-radius:6px;font-size:11px;
+    color:var(--ink);border:1px solid var(--line);position:relative;cursor:default}
+  .cell small{display:block;color:rgba(233,239,234,.75);font-size:10px}
+  .cell.unseen{color:var(--muted);background:var(--surface)}
+  .boxes{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+  .boxcol{background:var(--surface);border:1px solid var(--line);border-radius:8px;
+    padding:10px 8px;text-align:center}
+  .boxcol .n{font-family:var(--serif);font-size:20px;font-weight:600}
+  .boxcol .t{color:var(--muted);font-size:10px;letter-spacing:.08em;text-transform:uppercase;margin-top:2px}
+  .legend{color:var(--muted);font-size:11px;margin-top:10px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:3px;vertical-align:-1px;margin:0 4px 0 10px}
+
+  /* ---------- bank ---------- */
+  .bank-topic{margin-bottom:18px}
+  .bank-q{display:flex;gap:10px;align-items:baseline;padding:8px 4px;border-bottom:1px dashed var(--line);font-size:12.5px}
+  .bank-q .id{color:var(--muted);flex:none;width:38px}
+  .bank-q .bx{flex:none;color:var(--amber-dim);width:58px;font-size:11px}
+  .bank-q .st{color:var(--ink2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+  /* ---------- data ---------- */
+  .data-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+  .note{color:var(--muted);font-size:12px;margin-top:16px;line-height:1.6}
+  .warn{border:1px solid var(--amber-dim);border-radius:8px;padding:12px 14px;
+    color:var(--amber);font-size:12.5px;margin-bottom:16px}
+  input[type=file]{display:none}
+
+  footer{margin-top:34px;color:var(--muted);font-size:11px;text-align:center;letter-spacing:.06em}
+  @media(max-width:560px){
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .bar-row{grid-template-columns:110px 1fr 70px}
+    .boxes{grid-template-columns:repeat(3,1fr)}
+  }
+</style>
+<!-- ===== SUPABASE — safe to expose; every table below has RLS enabled ===== -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+  const SUPABASE_URL = 'https://gjgjotwxtkfjliojjmhy.supabase.co';
+  const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdqZ2pvdHd4dGtmamxpb2pqbWh5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODUzNTk4MzUsImV4cCI6MjEwMDkzNTgzNX0.lXzOXIuSn6zzRqrYPieNypsKWpJ5rqmum-TrdI-itw4';
+</script>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <div class="wordmark">LEDGER<em>//</em>DRILL</div>
+      <div class="sub">CFA Level I · Retrieval Engine · Aug 2027</div>
+    </div>
+    <div style="text-align:right">
+      <div class="sub" id="today"></div>
+      <div class="sub" id="authbox" style="margin-top:6px"></div>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="k">Due now</div><div class="v" id="s-due">–</div></div>
+    <div class="stat"><div class="k">Unseen</div><div class="v" id="s-new">–</div></div>
+    <div class="stat"><div class="k">Streak</div><div class="v" id="s-streak">–<small> d</small></div></div>
+    <div class="stat"><div class="k">Lifetime acc.</div><div class="v" id="s-acc">–</div></div>
+  </div>
+
+  <nav>
+    <button data-tab="drill" class="on">Drill</button>
+    <button data-tab="stats">Stats</button>
+    <button data-tab="bank">Bank</button>
+    <button data-tab="data">Data</button>
+  </nav>
+
+  <div id="panel" class="panel"></div>
+  <footer>LEDGER//DRILL v1 · question bank seeded for Phase 1 (FSA) · extend via Claude Code — see build spec</footer>
+</div>
+
+<script>
+'use strict';
+/* ================= QUESTION BANK =================
+   Format per question:
+   { id, topic, concept, stem, choices:[3], answer:index, why }
+   Extend by appending objects — see claude-code-spec.md. */
+const QUESTIONS = [
+// ---- Accounting Mechanics (bootcamp) ----
+{id:'M01',topic:'Accounting Mechanics',concept:'Accounting equation',stem:'A company buys $10,000 of equipment, paying $4,000 in cash and financing the remainder. The most accurate description of the effect on the accounting equation is:',choices:['Assets increase $6,000; liabilities increase $6,000','Assets increase $10,000; liabilities increase $10,000','Assets increase $6,000; equity increases $6,000'],answer:0,why:'Equipment +$10,000 and cash −$4,000 nets to assets +$6,000, matched by a $6,000 note payable. Equity is untouched — no revenue or expense occurred.'},
+{id:'M02',topic:'Accounting Mechanics',concept:'Accrual basis',stem:'A consulting firm completes a project in March and receives payment in April. Under accrual accounting, revenue is recognized in:',choices:['April, when cash is received','March, when the service is performed','Either month, at management’s discretion'],answer:1,why:'Accrual accounting recognizes revenue when the performance obligation is satisfied, not when cash moves. March gets the revenue; April merely converts a receivable to cash.'},
+{id:'M03',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A gym collects $1,200 in January for a 12-month membership. Immediately after collection, the gym reports:',choices:['$1,200 of revenue','A $1,200 receivable','A $1,200 liability (unearned revenue)'],answer:2,why:'Cash received before the service is delivered creates an obligation — unearned revenue, a liability. Revenue is recognized $100 per month as the service is provided.'},
+{id:'M04',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A company pays $6,000 on July 1 for one year of insurance. At year-end (Dec 31), the adjusting entry recognizes insurance expense of:',choices:['$6,000','$3,000','$500'],answer:1,why:'Six of twelve months have expired: $6,000 × 6/12 = $3,000 moves from the prepaid asset to expense. The remaining $3,000 stays on the balance sheet as prepaid insurance.'},
+{id:'M05',topic:'Accounting Mechanics',concept:'Statement links',stem:'Net income for the period, less dividends declared, flows into which balance sheet account?',choices:['Contributed capital','Accumulated other comprehensive income','Retained earnings'],answer:2,why:'Retained earnings is the bridge between the income statement and the balance sheet: ending RE = beginning RE + net income − dividends declared.'},
+{id:'M06',topic:'Accounting Mechanics',concept:'Debits & credits',stem:'Debits increase which pair of accounts?',choices:['Assets and expenses','Liabilities and revenues','Equity and liabilities'],answer:0,why:'Debits increase assets and expenses (and dividends); credits increase liabilities, equity, and revenues. If this isn’t reflexive yet, rebuild the mnemonic — everything in FSA sits on it.'},
+{id:'M07',topic:'Accounting Mechanics',concept:'Accruals',stem:'Employees earn $8,000 of wages in the last week of December, paid on January 5. In the December financial statements this appears as:',choices:['No entry until cash is paid in January','Wage expense of $8,000 and a wages payable liability of $8,000','A $8,000 reduction of cash and wage expense'],answer:1,why:'The expense belongs to the period the labor was consumed (December). Since cash hasn’t moved, the credit side is a liability — wages payable. January’s payment then clears the liability, touching no expense.'},
+{id:'M08',topic:'Accounting Mechanics',concept:'Matching',stem:'A retailer purchases inventory on credit in November and sells it in February. The cost of that inventory hits the income statement in:',choices:['November, when purchased','February, when sold, as cost of goods sold','December, at the fiscal year-end'],answer:1,why:'Inventory is an asset until it generates revenue. The matching principle books the cost as COGS in the same period as the sale it produced — February.'},
+{id:'M09',topic:'Accounting Mechanics',concept:'Equity transactions',stem:'An owner invests $50,000 cash in her company in exchange for shares. The effect is:',choices:['Assets +$50,000; equity +$50,000; no income statement effect','Assets +$50,000; revenue +$50,000','Assets +$50,000; liabilities +$50,000'],answer:0,why:'Owner contributions are capital transactions, never revenue. Cash rises, contributed capital rises, and the income statement is completely uninvolved.'},
+{id:'M10',topic:'Accounting Mechanics',concept:'Double entry',stem:'Which statement about double-entry accounting is most accurate?',choices:['Every transaction affects exactly one asset and one liability','Every transaction affects at least two accounts and preserves A = L + E','Debits must always equal credits only at year-end'],answer:1,why:'Each transaction posts equal debits and credits across two or more accounts, so the equation A = L + E holds continuously — not just at closing. That invariant is what the Week 3 bootcamp drills.'},
+// ---- Income Statement ----
+{id:'I01',topic:'Income Statement',concept:'Revenue recognition',stem:'Under the converged revenue standard, revenue is recognized when:',choices:['Cash is collected from the customer','The contract is signed','The entity satisfies a performance obligation by transferring control of the good or service'],answer:2,why:'The five-step model culminates in recognition as performance obligations are satisfied — control transfers to the customer. Cash timing and contract signing are neither necessary nor sufficient.'},
+{id:'I02',topic:'Income Statement',concept:'Margins',stem:'Revenue is $500,000 and cost of goods sold is $320,000. Gross profit margin is closest to:',choices:['36%','64%','56%'],answer:0,why:'Gross profit = 500 − 320 = $180,000. Margin = 180/500 = 36%. (64% is the COGS ratio — a classic trap of answering the complement.)'},
+{id:'I03',topic:'Income Statement',concept:'Classification',stem:'For a manufacturing company, interest expense is most appropriately classified as:',choices:['An operating expense','A non-operating item','A component of cost of goods sold'],answer:1,why:'For non-financial firms, interest arises from financing decisions, not operations, so it sits below operating income. (For banks, interest IS operating — a distinction L1 likes to test.)'},
+{id:'I04',topic:'Income Statement',concept:'Depreciation',stem:'Equipment costs $60,000 with an estimated salvage value of $10,000 and a 5-year useful life. Annual straight-line depreciation is:',choices:['$12,000','$14,000','$10,000'],answer:2,why:'(Cost − salvage) / life = (60,000 − 10,000)/5 = $10,000. Forgetting to subtract salvage gives the $12,000 distractor.'},
+{id:'I05',topic:'Income Statement',concept:'Net income',stem:'Revenue $800, COGS $450, SG&A $150, interest expense $40, tax rate 25%. Net income is closest to:',choices:['$160','$120','$140'],answer:1,why:'EBT = 800 − 450 − 150 − 40 = 160. Tax = 160 × 25% = 40. Net income = 120. The $160 distractor is pre-tax income; $140 forgets SG&A’s full effect... always run the waterfall in order.'},
+{id:'I06',topic:'Income Statement',concept:'EPS',stem:'Net income is $200,000, preferred dividends are $20,000, and weighted average common shares are 90,000. Basic EPS is:',choices:['$2.00','$2.22','$2.44'],answer:0,why:'Basic EPS = (NI − preferred dividends) / weighted average shares = (200,000 − 20,000)/90,000 = $2.00. Preferred dividends come out first because basic EPS belongs to common shareholders.'},
+{id:'I07',topic:'Income Statement',concept:'Gains vs revenue',stem:'A delivery company sells an old van for more than its carrying value. The excess is reported as:',choices:['Revenue','A gain, typically within other income','An extraordinary item'],answer:1,why:'Revenue comes from ordinary activities (deliveries); disposing of equipment is peripheral, so the excess over carrying value is a gain. (“Extraordinary items” no longer exist under either GAAP or IFRS.)'},
+{id:'I08',topic:'Income Statement',concept:'Expenses',stem:'Which of the following is an expense on a retailer’s income statement?',choices:['Repayment of loan principal','Dividends paid to shareholders','Store rent for the period'],answer:2,why:'Rent consumes resources to generate revenue — an expense. Principal repayment reduces a liability (balance sheet), and dividends are distributions of earnings, not costs of earning them.'},
+{id:'I09',topic:'Income Statement',concept:'Matching',stem:'A firm pays a 2% sales commission when goods are sold. Commissions on December sales, paid in January, are expensed in:',choices:['December, with the related revenue','January, when paid','Split between the two periods'],answer:0,why:'Matching: the commission is caused by December’s sale, so it’s accrued as December expense with a payable. Cash timing is irrelevant to recognition.'},
+// ---- Balance Sheet ----
+{id:'B01',topic:'Balance Sheet',concept:'Classification',stem:'A note payable due in eight months is reported as:',choices:['A current liability','A non-current liability','An offset against cash'],answer:0,why:'Current means due within one year (or the operating cycle, if longer). Eight months qualifies. Netting liabilities against cash is prohibited absent a legal right of offset.'},
+{id:'B02',topic:'Balance Sheet',concept:'Working capital',stem:'Current assets are $240,000 and current liabilities are $150,000. Working capital is:',choices:['$390,000','$90,000','1.6'],answer:1,why:'Working capital = CA − CL = 240 − 150 = $90,000. The 1.6 distractor is the current ratio — same inputs, different measure. Know which one the question asks for.'},
+{id:'B03',topic:'Balance Sheet',concept:'Liquidity ratios',stem:'Cash $40,000, receivables $80,000, inventory $60,000, prepaid expenses $20,000, current liabilities $100,000. The quick ratio is closest to:',choices:['2.0','1.2','1.8'],answer:1,why:'Quick ratio = (cash + short-term investments + receivables)/CL = (40+80)/100 = 1.2. Inventory and prepaids are excluded — they’re the least reliably convertible to cash. 2.0 is the current ratio.'},
+{id:'B04',topic:'Balance Sheet',concept:'Retained earnings',stem:'Beginning retained earnings $500,000; net income $120,000; dividends declared $30,000. Ending retained earnings is:',choices:['$590,000','$620,000','$650,000'],answer:0,why:'500 + 120 − 30 = $590,000. Declared is what matters — a declared-but-unpaid dividend has already left retained earnings and sits as a payable.'},
+{id:'B05',topic:'Balance Sheet',concept:'Measurement',stem:'Under the cost model, property, plant & equipment is carried on the balance sheet at:',choices:['Current market value','Replacement cost','Historical cost less accumulated depreciation (and any impairment)'],answer:2,why:'PP&E under the cost model is historical cost minus accumulated depreciation and impairment. Its book value can be far from market value — a core limitation of the balance sheet worth internalizing early.'},
+{id:'B06',topic:'Balance Sheet',concept:'Contra accounts',stem:'Accumulated depreciation is best described as:',choices:['An expense','A liability','A contra-asset that reduces the carrying value of PP&E'],answer:2,why:'It’s not an obligation to anyone and it’s not the period’s expense — it’s the running total of all depreciation taken, presented against the asset’s cost. Depreciation expense (income statement) feeds it each period.'},
+{id:'B07',topic:'Balance Sheet',concept:'Presentation',stem:'On a classified U.S. balance sheet, assets are typically presented:',choices:['Alphabetically','In order of liquidity, most liquid first','In order of dollar magnitude'],answer:1,why:'U.S. practice lists assets by decreasing liquidity: cash first, then receivables, inventory, and down to PP&E and intangibles. (IFRS filers often present the reverse — least liquid first.)'},
+{id:'B08',topic:'Balance Sheet',concept:'Classification',stem:'A company intends to hold a newly purchased delivery truck for six years. The truck is reported as:',choices:['Inventory','A non-current asset (PP&E)','A current asset, because it could be sold at any time'],answer:1,why:'Classification follows intended use, not hypothetical salability. Used in operations beyond one year → PP&E. It would be inventory only for a truck dealer holding it for sale.'},
+// ---- Cash Flow ----
+{id:'C01',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash paid to suppliers for inventory is classified as:',choices:['Operating cash flow','Investing cash flow','Financing cash flow'],answer:0,why:'Day-to-day trading activity — buying inventory, paying wages, collecting from customers — is operating. Investing is long-term assets; financing is capital providers.'},
+{id:'C02',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash used to purchase manufacturing equipment is classified as:',choices:['Investing outflow','Operating outflow','Financing outflow'],answer:0,why:'Acquiring long-lived productive assets is investing activity. Note the mismatch this creates: the cash leaves in year 1 (CFI), while the income statement spreads the cost over years as depreciation.'},
+{id:'C03',topic:'Cash Flow Statement',concept:'Classification',stem:'Proceeds from issuing bonds are classified as:',choices:['Operating inflow','Investing inflow','Financing inflow'],answer:2,why:'Transactions with capital providers — issuing or retiring debt and equity, paying dividends — are financing. The later interest payments, however, are operating under U.S. GAAP (IFRS allows a choice).'},
+{id:'C04',topic:'Cash Flow Statement',concept:'Indirect method',stem:'The indirect method of presenting operating cash flow begins with:',choices:['Cash collected from customers','Revenue','Net income'],answer:2,why:'Indirect CFO starts at net income and reverses out non-cash items (depreciation) and working-capital accruals to arrive at cash. The direct method starts from cash receipts instead — same CFO total.'},
+{id:'C05',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts receivable during the period is:',choices:['Added to net income','Subtracted from net income','Ignored — receivables are not cash'],answer:1,why:'Rising receivables mean some recognized revenue wasn’t collected in cash yet, so net income overstates cash — subtract the increase. The general rule: asset up → cash down.'},
+{id:'C06',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts payable during the period is:',choices:['Added to net income','Subtracted from net income','Reported as a financing inflow'],answer:0,why:'Rising payables mean the firm consumed goods it hasn’t paid cash for — expenses overstate cash outflow, so add the increase back. Liability up → cash up. Trade payables are operating, not financing.'},
+{id:'C07',topic:'Cash Flow Statement',concept:'Classification',stem:'Under U.S. GAAP, dividends paid to shareholders are classified as:',choices:['Operating outflow','Financing outflow','Investing outflow'],answer:1,why:'U.S. GAAP: dividends paid = financing; interest paid = operating. IFRS permits choices (dividends paid as operating or financing). The GAAP/IFRS classification table is a reliable exam point.'},
+{id:'C08',topic:'Cash Flow Statement',concept:'CFO calculation',stem:'Net income $100, depreciation $30, accounts receivable increased $20, accounts payable increased $10. Operating cash flow (indirect) is:',choices:['$120','$140','$100'],answer:0,why:'100 + 30 (non-cash) − 20 (AR up) + 10 (AP up) = $120. Run the signs mechanically: non-cash expenses back, asset increases out, liability increases in.'},
+{id:'C09',topic:'Cash Flow Statement',concept:'Free cash flow',stem:'Operating cash flow is $150,000 and capital expenditures are $60,000. A simple measure of free cash flow is:',choices:['$210,000','$150,000','$90,000'],answer:2,why:'FCF ≈ CFO − capex = 150 − 60 = $90,000 — cash the business generates after maintaining and growing its asset base. More refined definitions (FCFF/FCFE) arrive later in Equity; the intuition starts here.'}
+];
+
+/* ================= SCHEDULING ================= */
+const INTERVALS = {1:1, 2:3, 3:7, 4:14, 5:30};   // days per Leitner box
+const NEW_PER_SESSION = 8;
+const SESSION_CAP = 20;
+
+const dayOf = ts => Math.floor(ts / 86400000);
+const today = () => dayOf(Date.now());
+
+/* ================= STORAGE (guarded) ================= */
+const KEY = 'ledger-drill-v1';
+let storageOK = true;
+try { localStorage.setItem('__t','1'); localStorage.removeItem('__t'); }
+catch(e){ storageOK = false; }
+
+function blankState(){ return { cards:{}, log:{} }; }
+// cards[qid] = {box, last(day), seen, right}
+// log[day]   = {answered, right}
+let S = blankState();
+if (storageOK){
+  try { const raw = localStorage.getItem(KEY); if (raw) S = JSON.parse(raw); }
+  catch(e){ S = blankState(); }
+}
+function save(){ if (storageOK){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} } }
+
+function card(qid){
+  if (!S.cards[qid]) S.cards[qid] = {box:0, last:null, seen:0, right:0};
+  return S.cards[qid];
+}
+function isDue(qid){
+  const c = S.cards[qid];
+  if (!c || c.box === 0) return false;
+  return (today() - c.last) >= (INTERVALS[c.box] || 30);
+}
+function dueList(){ return QUESTIONS.filter(q => isDue(q.id)); }
+function newList(){ return QUESTIONS.filter(q => !S.cards[q.id] || S.cards[q.id].box === 0); }
+
+function record(qid, correct){
+  const c = card(qid);
+  c.seen++; if (correct) c.right++;
+  c.box = correct ? Math.min((c.box||0)+1, 5) : 1;
+  c.last = today();
+  const d = today();
+  if (!S.log[d]) S.log[d] = {answered:0, right:0};
+  S.log[d].answered++; if (correct) S.log[d].right++;
+  save();
+}
+
+function streak(){
+  const days = Object.keys(S.log).map(Number).sort((a,b)=>b-a);
+  if (!days.length) return 0;
+  let s = 0, expect = today();
+  if (days[0] !== expect) expect = today() - 1;   // allow "yesterday" to keep streak alive
+  for (const d of days){
+    if (d === expect){ s++; expect--; }
+    else if (d < expect) break;
+  }
+  return s;
+}
+function lifetime(){
+  let a=0, r=0;
+  Object.values(S.log).forEach(l => { a+=l.answered; r+=l.right; });
+  return a ? Math.round(100*r/a) : null;
+}
+
+/* ================= UI CORE ================= */
+const $ = sel => document.querySelector(sel);
+const panel = $('#panel');
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let currentUser = null;
+let currentTab = 'drill';
+
+function renderAuthUI(){
+  const box = $('#authbox');
+  if (!box) return;
+  if (currentUser){
+    box.innerHTML = `${esc(currentUser.email)} · <button id="signout">sign out</button>`;
+    $('#signout').addEventListener('click', () => sb.auth.signOut());
+  } else {
+    box.innerHTML = `
+      <input type="email" id="authemail" placeholder="email for sync" autocomplete="email">
+      <button id="sendlink">send link</button>
+      <div class="authmsg" id="authmsg"></div>`;
+    $('#sendlink').addEventListener('click', async () => {
+      const email = $('#authemail').value.trim();
+      const msg = $('#authmsg');
+      if (!email){ msg.textContent = 'enter an email first'; return; }
+      msg.textContent = 'sending…';
+      const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.href } });
+      msg.textContent = error ? 'could not send — try again' : 'check your email for the link';
+    });
+  }
+}
+
+sb.auth.onAuthStateChange(async (_event, session) => {
+  currentUser = session ? session.user : null;
+  renderAuthUI();
+  if (currentUser){
+    await onSignedIn();
+  }
+});
+
+async function onSignedIn(){
+  // Task 5 fills this in (import + merge). No-op placeholder removed by Task 5 —
+  // Task 3 alone must not leave a dangling TODO, so define it as a no-op that
+  // Task 5's Step 1 replaces in full.
+  refreshStats();
+  render(currentTab);
+}
+
+$('#today').textContent = new Date().toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'}).toUpperCase();
+
+function refreshStats(){
+  $('#s-due').textContent = dueList().length;
+  $('#s-new').textContent = newList().length;
+  $('#s-streak').innerHTML = streak() + '<small> d</small>';
+  const acc = lifetime();
+  $('#s-acc').textContent = acc === null ? '–' : acc + '%';
+}
+
+document.querySelectorAll('nav button').forEach(b=>{
+  b.addEventListener('click', ()=>{
+    document.querySelectorAll('nav button').forEach(x=>x.classList.remove('on'));
+    b.classList.add('on');
+    currentTab = b.dataset.tab;
+    render(currentTab);
+  });
+});
+
+function render(tab){
+  panel.classList.remove('panel'); void panel.offsetWidth; panel.classList.add('panel');
+  if (tab==='drill') renderDrillHome();
+  if (tab==='stats') renderStats();
+  if (tab==='bank')  renderBank();
+  if (tab==='data')  renderData();
+}
+
+/* ================= DRILL ================= */
+let session = null; // {queue, i, right, topics:{}}
+
+function shuffle(a){
+  for (let i=a.length-1;i>0;i--){ const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function buildSession(){
+  const due = shuffle(dueList());
+  const fresh = shuffle(newList()).slice(0, NEW_PER_SESSION);
+  const queue = shuffle(due.concat(fresh)).slice(0, SESSION_CAP);
+  return { queue, i:0, right:0, topics:{} };
+}
+
+function renderDrillHome(){
+  const due = dueList().length, fresh = Math.min(newList().length, NEW_PER_SESSION);
+  const n = Math.min(due + fresh, SESSION_CAP);
+  if (n === 0){
+    panel.innerHTML = `<div class="card empty"><h2>Nothing due.</h2>
+      <p>Every card is scheduled out. Come back when the intervals mature —<br>that's the system working, not you slacking.</p></div>`;
+    return;
+  }
+  panel.innerHTML = `<div class="card empty">
+    <h2>${n} question${n===1?'':'s'} queued</h2>
+    <p>${due} review${due===1?'':'s'} due · ${fresh} new</p>
+    <div class="actions" style="justify-content:center;margin-top:22px">
+      <button class="btn" id="start">Begin session</button>
+    </div></div>`;
+  $('#start').addEventListener('click', ()=>{ session = buildSession(); renderQuestion(); });
+}
+
+function renderQuestion(){
+  if (session.i >= session.queue.length){ renderSummary(); return; }
+  const q = session.queue[session.i];
+  const c = S.cards[q.id];
+  const boxLabel = (!c || c.box===0) ? 'NEW' : 'BOX ' + c.box;
+  const pct = Math.round(100 * session.i / session.queue.length);
+  panel.innerHTML = `
+    <div class="progressbar"><i style="width:${pct}%"></i></div>
+    <div class="card">
+      <div class="qmeta"><span>${esc(q.topic)} · ${esc(q.concept)}</span>
+        <span class="box-badge">${boxLabel} · ${session.i+1}/${session.queue.length}</span></div>
+      <div class="stem">${esc(q.stem)}</div>
+      <div class="choices">${q.choices.map((ch,i)=>`
+        <button class="choice" data-i="${i}">
+          <span class="letter">${'ABC'[i]}</span><span>${esc(ch)}</span>
+        </button>`).join('')}
+      </div>
+      <div id="feedback"></div>
+    </div>`;
+  document.querySelectorAll('.choice').forEach(btn=>{
+    btn.addEventListener('click', ()=> answer(q, parseInt(btn.dataset.i,10)));
+  });
+}
+
+function answer(q, pick){
+  const correct = pick === q.answer;
+  record(q.id, correct);
+  session.right += correct ? 1 : 0;
+  if (!session.topics[q.topic]) session.topics[q.topic] = {n:0,r:0};
+  session.topics[q.topic].n++; if (correct) session.topics[q.topic].r++;
+
+  document.querySelectorAll('.choice').forEach((btn,i)=>{
+    btn.disabled = true;
+    if (i === q.answer) btn.classList.add('correct');
+    else if (i === pick) btn.classList.add('wrong');
+  });
+  $('#feedback').innerHTML = `
+    <div class="verdict ${correct?'ok':'no'}">${correct ? '✓ Correct' : '✗ Incorrect — resets to Box 1'}</div>
+    <div class="explain">${esc(q.why)}</div>
+    <div class="actions"><button class="btn" id="next">${session.i+1 >= session.queue.length ? 'Finish' : 'Next →'}</button></div>`;
+  $('#next').addEventListener('click', ()=>{ session.i++; refreshStats(); renderQuestion(); });
+  $('#next').focus();
+}
+
+function renderSummary(){
+  const n = session.queue.length, r = session.right;
+  const pct = Math.round(100*r/n);
+  const rows = Object.entries(session.topics)
+    .map(([t,v])=>`<div class="row"><span>${esc(t)}</span><span>${v.r}/${v.n}</span></div>`).join('');
+  panel.innerHTML = `<div class="card done">
+    <h2>Session closed.</h2>
+    <div class="score">${pct}%</div>
+    <p>${r} of ${n} · logged to ${new Date().toLocaleDateString()}</p>
+    <div class="session-topics">${rows}</div>
+    <p style="margin-top:14px">${dueList().length} still due today.</p>
+    <div class="actions" style="justify-content:center">
+      ${dueList().length || newList().length ? '<button class="btn" id="again">Another round</button>' : ''}
+      <button class="btn ghost" id="home" style="margin-left:8px">Done</button>
+    </div></div>`;
+  const again = $('#again');
+  if (again) again.addEventListener('click', ()=>{ session = buildSession(); renderQuestion(); });
+  $('#home').addEventListener('click', ()=>{ session = null; refreshStats(); renderDrillHome(); });
+  session = null;
+  refreshStats();
+}
+
+/* ================= STATS ================= */
+function accColor(p){
+  if (p === null) return null;
+  if (p < 40) return 'var(--g1)';
+  if (p < 60) return 'var(--g2)';
+  if (p < 80) return 'var(--g3)';
+  return 'var(--g4)';
+}
+function renderStats(){
+  const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
+  let barHtml = '';
+  topics.forEach(t=>{
+    let n=0,r=0;
+    QUESTIONS.filter(q=>q.topic===t).forEach(q=>{
+      const c=S.cards[q.id]; if (c && c.seen){ n+=c.seen; r+=c.right; }
+    });
+    const p = n ? Math.round(100*r/n) : null;
+    barHtml += `<div class="bar-row"><span class="lbl">${esc(t)}</span>
+      <span class="track"><i style="width:${p===null?0:p}%"></i></span>
+      <span class="num">${p===null?'not seen':p+'% ('+r+'/'+n+')'}</span></div>`;
+  });
+
+  const concepts = {};
+  QUESTIONS.forEach(q=>{
+    const k = q.topic+' · '+q.concept;
+    if (!concepts[k]) concepts[k] = {n:0,r:0,label:q.concept,topic:q.topic};
+    const c = S.cards[q.id];
+    if (c && c.seen){ concepts[k].n += c.seen; concepts[k].r += c.right; }
+  });
+  let heatHtml = '';
+  Object.values(concepts).forEach(v=>{
+    const p = v.n ? Math.round(100*v.r/v.n) : null;
+    const col = accColor(p);
+    heatHtml += p===null
+      ? `<span class="cell unseen">${esc(v.label)}<small>unseen</small></span>`
+      : `<span class="cell" style="background:${col};border-color:transparent">${esc(v.label)}<small>${p}%</small></span>`;
+  });
+
+  const boxCounts = [0,0,0,0,0,0];
+  QUESTIONS.forEach(q=>{ const c=S.cards[q.id]; boxCounts[c?c.box:0]++; });
+  const boxHtml = ['New','Box 1','Box 2','Box 3','Box 4','Box 5'].map((t,i)=>
+    `<div class="boxcol"><div class="n">${boxCounts[i]}</div><div class="t">${t}</div></div>`).join('');
+
+  panel.innerHTML = `<div class="card">
+    <h3 class="section">Accuracy by topic — lifetime attempts</h3>${barHtml}
+    <h3 class="section">Concept map</h3><div class="heat">${heatHtml}</div>
+    <div class="legend">accuracy:<i style="background:var(--g1)"></i>&lt;40<i style="background:var(--g2)"></i>40–59<i style="background:var(--g3)"></i>60–79<i style="background:var(--g4)"></i>80+</div>
+    <h3 class="section">Scheduling state — cards per box (Box 5 = 30-day interval)</h3>
+    <div class="boxes">${boxHtml}</div></div>`;
+}
+
+/* ================= BANK ================= */
+function renderBank(){
+  const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
+  let html = '<div class="card">';
+  topics.forEach(t=>{
+    html += `<div class="bank-topic"><h3 class="section">${esc(t)}</h3>`;
+    QUESTIONS.filter(q=>q.topic===t).forEach(q=>{
+      const c = S.cards[q.id];
+      const bx = (!c || c.box===0) ? 'new' : 'box '+c.box;
+      html += `<div class="bank-q"><span class="id">${esc(q.id)}</span>
+        <span class="bx">${bx}</span><span class="st">${esc(q.stem)}</span></div>`;
+    });
+    html += '</div>';
+  });
+  panel.innerHTML = html + '</div>';
+}
+
+/* ================= DATA ================= */
+function renderData(){
+  panel.innerHTML = `<div class="card">
+    ${storageOK ? '' : `<div class="warn">⚠ Persistent storage is unavailable in this viewing context.
+      Progress will not survive a reload. Download this file and open it directly in a browser
+      (double-click it) for full persistence.</div>`}
+    <h3 class="section">Your data</h3>
+    <p style="color:var(--ink2);font-size:13px">Progress lives in this browser${storageOK?'':' (currently: memory only)'}.
+    Export before switching devices or clearing browser data; import to restore.</p>
+    <div class="data-actions">
+      <button class="btn" id="exp">Export progress</button>
+      <label class="btn ghost" for="imp">Import progress</label>
+      <input type="file" id="imp" accept=".json">
+      <button class="btn ghost" id="reset" style="border-color:var(--red);color:var(--red)">Reset all</button>
+    </div>
+    <p class="note" id="dmsg" style="color:var(--red)"></p>
+    <p class="note">Bank: ${QUESTIONS.length} questions · Phase 1 seed (accounting mechanics + FSA).
+    New units are added by extending the QUESTIONS array — the Claude Code build spec documents
+    the format and the generation prompt.</p></div>`;
+  $('#exp').addEventListener('click', ()=>{
+    const blob = new Blob([JSON.stringify({v:1, exported:new Date().toISOString(), state:S}, null, 2)],{type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'ledger-drill-progress.json';
+    a.click(); URL.revokeObjectURL(a.href);
+  });
+  $('#imp').addEventListener('change', e=>{
+    const f = e.target.files[0]; if (!f) return;
+    const r = new FileReader();
+    r.onload = ()=>{
+      try{
+        const data = JSON.parse(r.result);
+        if (data && data.state && data.state.cards){ S = data.state; save(); refreshStats(); renderData(); }
+        else { $('#dmsg').textContent = 'Not a LEDGER//DRILL export file.'; }
+      }catch(err){ $('#dmsg').textContent = 'Could not parse that file.'; }
+    };
+    r.readAsText(f);
+  });
+  let armed = false;
+  $('#reset').addEventListener('click', ()=>{
+    if (!armed){ armed = true; $('#reset').textContent = 'Click again to erase'; return; }
+    S = blankState(); save(); refreshStats(); renderData();
+  });
+}
+
+/* ================= INIT ================= */
+refreshStats();
+renderDrillHome();
+</script>
+</body>
+</html>
