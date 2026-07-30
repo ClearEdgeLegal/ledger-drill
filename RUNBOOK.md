@@ -4,7 +4,7 @@ Operational reference for running and extending the question bank. Written per T
 
 ## Bank inventory
 
-**Live as of 2026-07-30:** 486 questions across 9 units (86 original + 8 of 9 new topic batches applied). Portfolio Management (50 more) is drafted, reviewed, and revised per Kevin's conditions — pending final sign-off before it applies, which will bring the total to 536.
+**Live as of 2026-07-30:** 536 questions across 10 units (86 original + all 9 new topic batches). Full CFA Level I curriculum coverage.
 
 | Unit | Count | Id prefix(es) | Status |
 |---|---|---|---|
@@ -18,8 +18,8 @@ Operational reference for running and extending the question bank. Written per T
 | Derivatives | 50 | D | Live |
 | Alternatives | 50 | A | Live |
 | Ethics | 50 | ET | Live |
-| Portfolio Management | 50 | P | **Pending** — drafted, reviewed, revised; awaiting final approval |
-| **Total (once P applies)** | **536** | | |
+| Portfolio Management | 50 | P | Live |
+| **Total** | **536** | | |
 
 This covers the full CFA Level I curriculum. Future work is refresh/correction of existing units, not new-unit generation, unless the syllabus itself changes.
 
