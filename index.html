@@ -199,48 +199,39 @@
    Format per question:
    { id, topic, concept, stem, choices:[3], answer:index, why }
    Extend by appending objects — see claude-code-spec.md. */
-const QUESTIONS = [
+const SEED_QUESTIONS = [
 // ---- Accounting Mechanics (bootcamp) ----
 {id:'M01',topic:'Accounting Mechanics',concept:'Accounting equation',stem:'A company buys $10,000 of equipment, paying $4,000 in cash and financing the remainder. The most accurate description of the effect on the accounting equation is:',choices:['Assets increase $6,000; liabilities increase $6,000','Assets increase $10,000; liabilities increase $10,000','Assets increase $6,000; equity increases $6,000'],answer:0,why:'Equipment +$10,000 and cash −$4,000 nets to assets +$6,000, matched by a $6,000 note payable. Equity is untouched — no revenue or expense occurred.'},
 {id:'M02',topic:'Accounting Mechanics',concept:'Accrual basis',stem:'A consulting firm completes a project in March and receives payment in April. Under accrual accounting, revenue is recognized in:',choices:['April, when cash is received','March, when the service is performed','Either month, at management’s discretion'],answer:1,why:'Accrual accounting recognizes revenue when the performance obligation is satisfied, not when cash moves. March gets the revenue; April merely converts a receivable to cash.'},
 {id:'M03',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A gym collects $1,200 in January for a 12-month membership. Immediately after collection, the gym reports:',choices:['$1,200 of revenue','A $1,200 receivable','A $1,200 liability (unearned revenue)'],answer:2,why:'Cash received before the service is delivered creates an obligation — unearned revenue, a liability. Revenue is recognized $100 per month as the service is provided.'},
 {id:'M04',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A company pays $6,000 on July 1 for one year of insurance. At year-end (Dec 31), the adjusting entry recognizes insurance expense of:',choices:['$6,000','$3,000','$500'],answer:1,why:'Six of twelve months have expired: $6,000 × 6/12 = $3,000 moves from the prepaid asset to expense. The remaining $3,000 stays on the balance sheet as prepaid insurance.'},
 {id:'M05',topic:'Accounting Mechanics',concept:'Statement links',stem:'Net income for the period, less dividends declared, flows into which balance sheet account?',choices:['Contributed capital','Accumulated other comprehensive income','Retained earnings'],answer:2,why:'Retained earnings is the bridge between the income statement and the balance sheet: ending RE = beginning RE + net income − dividends declared.'},
-{id:'M06',topic:'Accounting Mechanics',concept:'Debits & credits',stem:'Debits increase which pair of accounts?',choices:['Assets and expenses','Liabilities and revenues','Equity and liabilities'],answer:0,why:'Debits increase assets and expenses (and dividends); credits increase liabilities, equity, and revenues. If this isn’t reflexive yet, rebuild the mnemonic — everything in FSA sits on it.'},
-{id:'M07',topic:'Accounting Mechanics',concept:'Accruals',stem:'Employees earn $8,000 of wages in the last week of December, paid on January 5. In the December financial statements this appears as:',choices:['No entry until cash is paid in January','Wage expense of $8,000 and a wages payable liability of $8,000','A $8,000 reduction of cash and wage expense'],answer:1,why:'The expense belongs to the period the labor was consumed (December). Since cash hasn’t moved, the credit side is a liability — wages payable. January’s payment then clears the liability, touching no expense.'},
-{id:'M08',topic:'Accounting Mechanics',concept:'Matching',stem:'A retailer purchases inventory on credit in November and sells it in February. The cost of that inventory hits the income statement in:',choices:['November, when purchased','February, when sold, as cost of goods sold','December, at the fiscal year-end'],answer:1,why:'Inventory is an asset until it generates revenue. The matching principle books the cost as COGS in the same period as the sale it produced — February.'},
-{id:'M09',topic:'Accounting Mechanics',concept:'Equity transactions',stem:'An owner invests $50,000 cash in her company in exchange for shares. The effect is:',choices:['Assets +$50,000; equity +$50,000; no income statement effect','Assets +$50,000; revenue +$50,000','Assets +$50,000; liabilities +$50,000'],answer:0,why:'Owner contributions are capital transactions, never revenue. Cash rises, contributed capital rises, and the income statement is completely uninvolved.'},
-{id:'M10',topic:'Accounting Mechanics',concept:'Double entry',stem:'Which statement about double-entry accounting is most accurate?',choices:['Every transaction affects exactly one asset and one liability','Every transaction affects at least two accounts and preserves A = L + E','Debits must always equal credits only at year-end'],answer:1,why:'Each transaction posts equal debits and credits across two or more accounts, so the equation A = L + E holds continuously — not just at closing. That invariant is what the Week 3 bootcamp drills.'},
 // ---- Income Statement ----
 {id:'I01',topic:'Income Statement',concept:'Revenue recognition',stem:'Under the converged revenue standard, revenue is recognized when:',choices:['Cash is collected from the customer','The contract is signed','The entity satisfies a performance obligation by transferring control of the good or service'],answer:2,why:'The five-step model culminates in recognition as performance obligations are satisfied — control transfers to the customer. Cash timing and contract signing are neither necessary nor sufficient.'},
 {id:'I02',topic:'Income Statement',concept:'Margins',stem:'Revenue is $500,000 and cost of goods sold is $320,000. Gross profit margin is closest to:',choices:['36%','64%','56%'],answer:0,why:'Gross profit = 500 − 320 = $180,000. Margin = 180/500 = 36%. (64% is the COGS ratio — a classic trap of answering the complement.)'},
 {id:'I03',topic:'Income Statement',concept:'Classification',stem:'For a manufacturing company, interest expense is most appropriately classified as:',choices:['An operating expense','A non-operating item','A component of cost of goods sold'],answer:1,why:'For non-financial firms, interest arises from financing decisions, not operations, so it sits below operating income. (For banks, interest IS operating — a distinction L1 likes to test.)'},
 {id:'I04',topic:'Income Statement',concept:'Depreciation',stem:'Equipment costs $60,000 with an estimated salvage value of $10,000 and a 5-year useful life. Annual straight-line depreciation is:',choices:['$12,000','$14,000','$10,000'],answer:2,why:'(Cost − salvage) / life = (60,000 − 10,000)/5 = $10,000. Forgetting to subtract salvage gives the $12,000 distractor.'},
 {id:'I05',topic:'Income Statement',concept:'Net income',stem:'Revenue $800, COGS $450, SG&A $150, interest expense $40, tax rate 25%. Net income is closest to:',choices:['$160','$120','$140'],answer:1,why:'EBT = 800 − 450 − 150 − 40 = 160. Tax = 160 × 25% = 40. Net income = 120. The $160 distractor is pre-tax income; $140 forgets SG&A’s full effect... always run the waterfall in order.'},
-{id:'I06',topic:'Income Statement',concept:'EPS',stem:'Net income is $200,000, preferred dividends are $20,000, and weighted average common shares are 90,000. Basic EPS is:',choices:['$2.00','$2.22','$2.44'],answer:0,why:'Basic EPS = (NI − preferred dividends) / weighted average shares = (200,000 − 20,000)/90,000 = $2.00. Preferred dividends come out first because basic EPS belongs to common shareholders.'},
-{id:'I07',topic:'Income Statement',concept:'Gains vs revenue',stem:'A delivery company sells an old van for more than its carrying value. The excess is reported as:',choices:['Revenue','A gain, typically within other income','An extraordinary item'],answer:1,why:'Revenue comes from ordinary activities (deliveries); disposing of equipment is peripheral, so the excess over carrying value is a gain. (“Extraordinary items” no longer exist under either GAAP or IFRS.)'},
-{id:'I08',topic:'Income Statement',concept:'Expenses',stem:'Which of the following is an expense on a retailer’s income statement?',choices:['Repayment of loan principal','Dividends paid to shareholders','Store rent for the period'],answer:2,why:'Rent consumes resources to generate revenue — an expense. Principal repayment reduces a liability (balance sheet), and dividends are distributions of earnings, not costs of earning them.'},
-{id:'I09',topic:'Income Statement',concept:'Matching',stem:'A firm pays a 2% sales commission when goods are sold. Commissions on December sales, paid in January, are expensed in:',choices:['December, with the related revenue','January, when paid','Split between the two periods'],answer:0,why:'Matching: the commission is caused by December’s sale, so it’s accrued as December expense with a payable. Cash timing is irrelevant to recognition.'},
 // ---- Balance Sheet ----
 {id:'B01',topic:'Balance Sheet',concept:'Classification',stem:'A note payable due in eight months is reported as:',choices:['A current liability','A non-current liability','An offset against cash'],answer:0,why:'Current means due within one year (or the operating cycle, if longer). Eight months qualifies. Netting liabilities against cash is prohibited absent a legal right of offset.'},
 {id:'B02',topic:'Balance Sheet',concept:'Working capital',stem:'Current assets are $240,000 and current liabilities are $150,000. Working capital is:',choices:['$390,000','$90,000','1.6'],answer:1,why:'Working capital = CA − CL = 240 − 150 = $90,000. The 1.6 distractor is the current ratio — same inputs, different measure. Know which one the question asks for.'},
 {id:'B03',topic:'Balance Sheet',concept:'Liquidity ratios',stem:'Cash $40,000, receivables $80,000, inventory $60,000, prepaid expenses $20,000, current liabilities $100,000. The quick ratio is closest to:',choices:['2.0','1.2','1.8'],answer:1,why:'Quick ratio = (cash + short-term investments + receivables)/CL = (40+80)/100 = 1.2. Inventory and prepaids are excluded — they’re the least reliably convertible to cash. 2.0 is the current ratio.'},
 {id:'B04',topic:'Balance Sheet',concept:'Retained earnings',stem:'Beginning retained earnings $500,000; net income $120,000; dividends declared $30,000. Ending retained earnings is:',choices:['$590,000','$620,000','$650,000'],answer:0,why:'500 + 120 − 30 = $590,000. Declared is what matters — a declared-but-unpaid dividend has already left retained earnings and sits as a payable.'},
 {id:'B05',topic:'Balance Sheet',concept:'Measurement',stem:'Under the cost model, property, plant & equipment is carried on the balance sheet at:',choices:['Current market value','Replacement cost','Historical cost less accumulated depreciation (and any impairment)'],answer:2,why:'PP&E under the cost model is historical cost minus accumulated depreciation and impairment. Its book value can be far from market value — a core limitation of the balance sheet worth internalizing early.'},
-{id:'B06',topic:'Balance Sheet',concept:'Contra accounts',stem:'Accumulated depreciation is best described as:',choices:['An expense','A liability','A contra-asset that reduces the carrying value of PP&E'],answer:2,why:'It’s not an obligation to anyone and it’s not the period’s expense — it’s the running total of all depreciation taken, presented against the asset’s cost. Depreciation expense (income statement) feeds it each period.'},
-{id:'B07',topic:'Balance Sheet',concept:'Presentation',stem:'On a classified U.S. balance sheet, assets are typically presented:',choices:['Alphabetically','In order of liquidity, most liquid first','In order of dollar magnitude'],answer:1,why:'U.S. practice lists assets by decreasing liquidity: cash first, then receivables, inventory, and down to PP&E and intangibles. (IFRS filers often present the reverse — least liquid first.)'},
-{id:'B08',topic:'Balance Sheet',concept:'Classification',stem:'A company intends to hold a newly purchased delivery truck for six years. The truck is reported as:',choices:['Inventory','A non-current asset (PP&E)','A current asset, because it could be sold at any time'],answer:1,why:'Classification follows intended use, not hypothetical salability. Used in operations beyond one year → PP&E. It would be inventory only for a truck dealer holding it for sale.'},
 // ---- Cash Flow ----
 {id:'C01',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash paid to suppliers for inventory is classified as:',choices:['Operating cash flow','Investing cash flow','Financing cash flow'],answer:0,why:'Day-to-day trading activity — buying inventory, paying wages, collecting from customers — is operating. Investing is long-term assets; financing is capital providers.'},
 {id:'C02',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash used to purchase manufacturing equipment is classified as:',choices:['Investing outflow','Operating outflow','Financing outflow'],answer:0,why:'Acquiring long-lived productive assets is investing activity. Note the mismatch this creates: the cash leaves in year 1 (CFI), while the income statement spreads the cost over years as depreciation.'},
 {id:'C03',topic:'Cash Flow Statement',concept:'Classification',stem:'Proceeds from issuing bonds are classified as:',choices:['Operating inflow','Investing inflow','Financing inflow'],answer:2,why:'Transactions with capital providers — issuing or retiring debt and equity, paying dividends — are financing. The later interest payments, however, are operating under U.S. GAAP (IFRS allows a choice).'},
 {id:'C04',topic:'Cash Flow Statement',concept:'Indirect method',stem:'The indirect method of presenting operating cash flow begins with:',choices:['Cash collected from customers','Revenue','Net income'],answer:2,why:'Indirect CFO starts at net income and reverses out non-cash items (depreciation) and working-capital accruals to arrive at cash. The direct method starts from cash receipts instead — same CFO total.'},
-{id:'C05',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts receivable during the period is:',choices:['Added to net income','Subtracted from net income','Ignored — receivables are not cash'],answer:1,why:'Rising receivables mean some recognized revenue wasn’t collected in cash yet, so net income overstates cash — subtract the increase. The general rule: asset up → cash down.'},
-{id:'C06',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts payable during the period is:',choices:['Added to net income','Subtracted from net income','Reported as a financing inflow'],answer:0,why:'Rising payables mean the firm consumed goods it hasn’t paid cash for — expenses overstate cash outflow, so add the increase back. Liability up → cash up. Trade payables are operating, not financing.'},
-{id:'C07',topic:'Cash Flow Statement',concept:'Classification',stem:'Under U.S. GAAP, dividends paid to shareholders are classified as:',choices:['Operating outflow','Financing outflow','Investing outflow'],answer:1,why:'U.S. GAAP: dividends paid = financing; interest paid = operating. IFRS permits choices (dividends paid as operating or financing). The GAAP/IFRS classification table is a reliable exam point.'},
-{id:'C08',topic:'Cash Flow Statement',concept:'CFO calculation',stem:'Net income $100, depreciation $30, accounts receivable increased $20, accounts payable increased $10. Operating cash flow (indirect) is:',choices:['$120','$140','$100'],answer:0,why:'100 + 30 (non-cash) − 20 (AR up) + 10 (AP up) = $120. Run the signs mechanically: non-cash expenses back, asset increases out, liability increases in.'},
-{id:'C09',topic:'Cash Flow Statement',concept:'Free cash flow',stem:'Operating cash flow is $150,000 and capital expenditures are $60,000. A simple measure of free cash flow is:',choices:['$210,000','$150,000','$90,000'],answer:2,why:'FCF ≈ CFO − capex = 150 − 60 = $90,000 — cash the business generates after maintaining and growing its asset base. More refined definitions (FCFF/FCFE) arrive later in Equity; the intuition starts here.'}
+{id:'C05',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts receivable during the period is:',choices:['Added to net income','Subtracted from net income','Ignored — receivables are not cash'],answer:1,why:'Rising receivables mean some recognized revenue wasn’t collected in cash yet, so net income overstates cash — subtract the increase. The general rule: asset up → cash down.'}
 ];
+
+let QUESTIONS = SEED_QUESTIONS.slice();
+
+function mapRemoteQuestion(row){
+  return { id: row.id, topic: row.topic, concept: row.concept, stem: row.stem,
+           choices: row.choices, answer: row.answer, why: row.why };
+}
 
 /* ================= SCHEDULING ================= */
 const INTERVALS = {1:1, 2:3, 3:7, 4:14, 5:30};   // days per Leitner box
@@ -265,6 +256,31 @@ if (storageOK){
   catch(e){ S = blankState(); }
 }
 function save(){ if (storageOK){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} } }
+
+const QCACHE_KEY = 'ledger-drill-questions-cache-v1';
+
+async function loadQuestions(){
+  if (navigator.onLine){
+    try {
+      const { data, error } = await sb.from('questions').select('*').eq('active', true);
+      if (!error && data && data.length){
+        QUESTIONS = data.map(mapRemoteQuestion);
+        if (storageOK){ try{ localStorage.setItem(QCACHE_KEY, JSON.stringify(QUESTIONS)); }catch(e){} }
+        return;
+      }
+    } catch(e){ /* network/RLS failure — fall through */ }
+  }
+  if (storageOK){
+    try {
+      const raw = localStorage.getItem(QCACHE_KEY);
+      if (raw){
+        const cached = JSON.parse(raw);
+        if (Array.isArray(cached) && cached.length){ QUESTIONS = cached; return; }
+      }
+    } catch(e){ /* fall through to embedded seed */ }
+  }
+  // QUESTIONS already holds SEED_QUESTIONS from the initializer above — no-op.
+}
 
 function card(qid){
   if (!S.cards[qid]) S.cards[qid] = {box:0, last:null, seen:0, right:0};
@@ -592,8 +608,14 @@ function renderData(){
 }
 
 /* ================= INIT ================= */
-refreshStats();
-renderDrillHome();
+(async function init(){
+  const { data: { session } } = await sb.auth.getSession();
+  currentUser = session ? session.user : null;
+  await loadQuestions();
+  renderAuthUI();
+  refreshStats();
+  renderDrillHome();
+})();
 </script>
 </body>
 </html>
