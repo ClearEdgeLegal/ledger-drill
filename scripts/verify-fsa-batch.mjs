@@ -89,7 +89,7 @@ check('live F ids exactly match draft ids',
 
 console.log('\n--- 5. field-by-field content match vs the reviewed draft ---');
 const live = q(
-  "select id, unit, topic, concept, stem, choices, answer, why from questions " +
+  "select id, unit, active, topic, concept, stem, choices, answer, why from questions " +
   "where id like 'F%' order by id;");
 const byId = new Map(live.map(r => [r.id, r]));
 let drift = 0;
@@ -98,6 +98,10 @@ for (const d of DRAFT) {
   if (!r) { fails.push(`${d.id}: missing from live table`); drift++; continue; }
   const cmp = [
     ['unit', r.unit, 'FSA'],
+    // A batch inserted with active=false would be invisible in the app
+    // (index.html filters .eq('active', true)) while every other check
+    // here stayed green -- this line is the only thing that would catch it.
+    ['active', r.active, true],
     ['topic', r.topic, d.topic],
     ['concept', r.concept, d.concept],
     ['stem', r.stem, d.stem],

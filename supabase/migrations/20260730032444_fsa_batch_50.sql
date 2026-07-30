@@ -7,10 +7,16 @@
 -- calculation (19) / 26% multi-step-or-GAAP-vs-IFRS (13), against the usual
 -- ~40/40/20 target in claude-code-spec.md section Authoring rules (rule 6).
 -- The deviation is deliberate and was reviewed and approved by Kevin: FSA
--- tests GAAP-vs-IFRS discrimination heavily, and 6 of the 13 hard-bucket
--- items are GAAP-vs-IFRS pairs (F04, F12, F15, F16, F24, F29) that are worth
--- more than the conceptual items they would displace. The remaining 7 are
--- multi-step calculations (F10, F23, F25, F28, F38, F41, F47).
+-- tests GAAP-vs-IFRS discrimination heavily, and 4 of the 13 hard-bucket
+-- items are LIVE current-GAAP-vs-current-IFRS discriminations (F04, F12,
+-- F15, F16) worth more than the conceptual items they would displace. Two
+-- more (F24, F29) are GAAP-vs-IFRS in form but contrast IFRS against
+-- superseded/pre-convergence US GAAP rather than the current rule -- still
+-- legitimate FSA content, just not "live" discrimination the way the other
+-- four are (corrected here post-review; the original approval described
+-- this as 6, not 4+2 -- doesn't change the approved 36/38/26 mix, only the
+-- rationale's precision). The remaining 7 are multi-step calculations
+-- (F10, F23, F25, F28, F38, F41, F47).
 -- THIS IS NOT A PRECEDENT. Future batches should target ~40/40/20 unless the
 -- same reasoning genuinely applies to that unit -- do not read 36/38/26 here
 -- as the standard.
