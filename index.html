@@ -255,6 +255,8 @@ if (storageOK){
   try { const raw = localStorage.getItem(KEY); if (raw) S = JSON.parse(raw); }
   catch(e){ S = blankState(); }
 }
+// v1→v2 schema migration: backfill updatedAt on any card that predates sync.
+Object.values(S.cards).forEach(c => { if (c.updatedAt === undefined) c.updatedAt = 0; });
 function save(){ if (storageOK){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} } }
 
 const QCACHE_KEY = 'ledger-drill-questions-cache-v1';
@@ -299,10 +301,71 @@ function record(qid, correct){
   c.seen++; if (correct) c.right++;
   c.box = correct ? Math.min((c.box||0)+1, 5) : 1;
   c.last = today();
+  c.updatedAt = Date.now();
   const d = today();
   if (!S.log[d]) S.log[d] = {answered:0, right:0};
   S.log[d].answered++; if (correct) S.log[d].right++;
   save();
+  syncAttempt(qid, correct);
+  syncCardState(qid);
+}
+
+async function syncAttempt(qid, correct){
+  if (!currentUser) return;
+  try { await sb.from('attempts').insert({ user_id: currentUser.id, qid, was_correct: correct }); }
+  catch(e){ /* silent — never block the UI */ }
+}
+
+async function syncCardState(qid){
+  if (!currentUser) return;
+  const c = S.cards[qid];
+  try {
+    await sb.from('card_state').upsert({
+      user_id: currentUser.id, qid,
+      box: c.box, last_day: c.last, seen: c.seen, correct: c.right,
+      updated_at: new Date(c.updatedAt).toISOString()
+    });
+  } catch(e){ /* silent — never block the UI */ }
+}
+
+async function mergeRemoteCardState(){
+  if (!currentUser) return;
+  try {
+    const { data, error } = await sb.from('card_state').select('*').eq('user_id', currentUser.id);
+    if (error || !data) return;
+    let changed = false;
+    data.forEach(row => {
+      const local = S.cards[row.qid];
+      const remoteMs = new Date(row.updated_at).getTime();
+      const localMs = local ? (local.updatedAt || 0) : -1;
+      if (remoteMs > localMs){
+        S.cards[row.qid] = { box: row.box, last: row.last_day, seen: row.seen, right: row.correct, updatedAt: remoteMs };
+        changed = true;
+      }
+    });
+    if (changed) save();
+  } catch(e){ /* silent */ }
+}
+
+const IMPORT_FLAG_KEY = 'ledger-drill-v1-imported';
+
+async function maybeImportV1Progress(){
+  if (!currentUser) return;
+  if (!storageOK || localStorage.getItem(IMPORT_FLAG_KEY)) return;
+  try {
+    const { data, error } = await sb.from('card_state').select('qid').eq('user_id', currentUser.id).limit(1);
+    if (error) return; // retry on next load
+    if (data && data.length > 0){ localStorage.setItem(IMPORT_FLAG_KEY, '1'); return; } // remote already has state
+    const qids = Object.keys(S.cards);
+    if (qids.length === 0){ localStorage.setItem(IMPORT_FLAG_KEY, '1'); return; }
+    const rows = qids.map(qid => {
+      const c = S.cards[qid];
+      return { user_id: currentUser.id, qid, box: c.box, last_day: c.last, seen: c.seen,
+               correct: c.right, updated_at: new Date(c.updatedAt || Date.now()).toISOString() };
+    });
+    const { error: upErr } = await sb.from('card_state').upsert(rows);
+    if (!upErr) localStorage.setItem(IMPORT_FLAG_KEY, '1');
+  } catch(e){ /* leave flag unset — retried next load, safe since remote card_state is still empty */ }
 }
 
 function streak(){
@@ -362,9 +425,8 @@ sb.auth.onAuthStateChange(async (_event, session) => {
 });
 
 async function onSignedIn(){
-  // Task 5 fills this in (import + merge). No-op placeholder removed by Task 5 —
-  // Task 3 alone must not leave a dangling TODO, so define it as a no-op that
-  // Task 5's Step 1 replaces in full.
+  await maybeImportV1Progress();
+  await mergeRemoteCardState();
   refreshStats();
   render(currentTab);
 }
