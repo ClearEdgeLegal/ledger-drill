@@ -39,6 +39,7 @@
   .wordmark{font-family:var(--serif);font-weight:700;font-size:26px;letter-spacing:.3px}
   .wordmark em{font-style:normal;color:var(--amber)}
   .sub{color:var(--muted);font-size:11.5px;letter-spacing:.14em;text-transform:uppercase}
+  .hdr-right{text-align:right}
   #authbox{font-size:11px}
   #authbox input{background:var(--surface2);border:1px solid var(--line);border-radius:6px;
     color:var(--ink);font-family:var(--mono);font-size:11.5px;padding:5px 8px;width:150px}
@@ -153,6 +154,9 @@
     .stats{grid-template-columns:repeat(2,1fr)}
     .bar-row{grid-template-columns:110px 1fr 70px}
     .boxes{grid-template-columns:repeat(3,1fr)}
+    header{flex-direction:column;align-items:flex-start;gap:10px}
+    .hdr-right{text-align:left;width:100%}
+    #authbox input{width:100%;max-width:260px;box-sizing:border-box}
   }
 </style>
 <!-- ===== SUPABASE — safe to expose; every table below has RLS enabled ===== -->
@@ -169,7 +173,7 @@
       <div class="wordmark">LEDGER<em>//</em>DRILL</div>
       <div class="sub">CFA Level I · Retrieval Engine · Aug 2027</div>
     </div>
-    <div style="text-align:right">
+    <div class="hdr-right">
       <div class="sub" id="today"></div>
       <div class="sub" id="authbox" style="margin-top:6px"></div>
     </div>
