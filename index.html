@@ -425,6 +425,12 @@ sb.auth.onAuthStateChange(async (_event, session) => {
 });
 
 async function onSignedIn(){
+  // Re-fetch now that we know auth is truly ready. init()'s own loadQuestions()
+  // call can race ahead of magic-link session establishment on the very first
+  // post-redirect page load, silently falling back to the 20-question seed
+  // with no later retry -- this call is that retry, keyed off a state we know
+  // is genuinely authenticated rather than a session check that may fire early.
+  await loadQuestions();
   await maybeImportV1Progress();
   await mergeRemoteCardState();
   refreshStats();
