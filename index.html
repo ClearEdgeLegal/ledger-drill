@@ -101,6 +101,19 @@
   .progressbar{height:3px;background:var(--line);border-radius:2px;margin-bottom:18px;overflow:hidden}
   .progressbar i{display:block;height:100%;background:var(--amber);border-radius:2px;transition:width .3s ease}
 
+  /* ---------- unit chips + focus toggle ---------- */
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+  .chip{background:var(--surface2);border:1px solid var(--line);border-radius:20px;
+    padding:6px 12px;font-family:var(--mono);font-size:12px;color:var(--ink2);cursor:pointer;
+    user-select:none;display:inline-flex;align-items:center;gap:6px;transition:border-color .15s,color .15s}
+  .chip:hover{border-color:var(--amber-dim)}
+  .chip.on{border-color:var(--amber);color:var(--amber);background:rgba(227,169,60,.08)}
+  .chip .n{color:var(--muted);font-size:10.5px}
+  .chip.on .n{color:var(--amber-dim)}
+  .focus-toggle{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink2);
+    margin-bottom:18px;cursor:pointer;user-select:none}
+  .focus-toggle input{accent-color:var(--amber);cursor:pointer}
+
   .done{text-align:center;padding:38px 20px}
   .done h2{font-family:var(--serif);font-size:30px;margin-bottom:6px}
   .done .score{color:var(--amber);font-family:var(--serif);font-size:52px;font-weight:700;margin:12px 0 4px}
@@ -205,35 +218,35 @@
    Extend by appending objects — see claude-code-spec.md. */
 const SEED_QUESTIONS = [
 // ---- Accounting Mechanics (bootcamp) ----
-{id:'M01',topic:'Accounting Mechanics',concept:'Accounting equation',stem:'A company buys $10,000 of equipment, paying $4,000 in cash and financing the remainder. The most accurate description of the effect on the accounting equation is:',choices:['Assets increase $6,000; liabilities increase $6,000','Assets increase $10,000; liabilities increase $10,000','Assets increase $6,000; equity increases $6,000'],answer:0,why:'Equipment +$10,000 and cash −$4,000 nets to assets +$6,000, matched by a $6,000 note payable. Equity is untouched — no revenue or expense occurred.'},
-{id:'M02',topic:'Accounting Mechanics',concept:'Accrual basis',stem:'A consulting firm completes a project in March and receives payment in April. Under accrual accounting, revenue is recognized in:',choices:['April, when cash is received','March, when the service is performed','Either month, at management’s discretion'],answer:1,why:'Accrual accounting recognizes revenue when the performance obligation is satisfied, not when cash moves. March gets the revenue; April merely converts a receivable to cash.'},
-{id:'M03',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A gym collects $1,200 in January for a 12-month membership. Immediately after collection, the gym reports:',choices:['$1,200 of revenue','A $1,200 receivable','A $1,200 liability (unearned revenue)'],answer:2,why:'Cash received before the service is delivered creates an obligation — unearned revenue, a liability. Revenue is recognized $100 per month as the service is provided.'},
-{id:'M04',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A company pays $6,000 on July 1 for one year of insurance. At year-end (Dec 31), the adjusting entry recognizes insurance expense of:',choices:['$6,000','$3,000','$500'],answer:1,why:'Six of twelve months have expired: $6,000 × 6/12 = $3,000 moves from the prepaid asset to expense. The remaining $3,000 stays on the balance sheet as prepaid insurance.'},
-{id:'M05',topic:'Accounting Mechanics',concept:'Statement links',stem:'Net income for the period, less dividends declared, flows into which balance sheet account?',choices:['Contributed capital','Accumulated other comprehensive income','Retained earnings'],answer:2,why:'Retained earnings is the bridge between the income statement and the balance sheet: ending RE = beginning RE + net income − dividends declared.'},
+{id:'M01',unit:'FSA-bootcamp',topic:'Accounting Mechanics',concept:'Accounting equation',stem:'A company buys $10,000 of equipment, paying $4,000 in cash and financing the remainder. The most accurate description of the effect on the accounting equation is:',choices:['Assets increase $6,000; liabilities increase $6,000','Assets increase $10,000; liabilities increase $10,000','Assets increase $6,000; equity increases $6,000'],answer:0,why:'Equipment +$10,000 and cash −$4,000 nets to assets +$6,000, matched by a $6,000 note payable. Equity is untouched — no revenue or expense occurred.'},
+{id:'M02',unit:'FSA-bootcamp',topic:'Accounting Mechanics',concept:'Accrual basis',stem:'A consulting firm completes a project in March and receives payment in April. Under accrual accounting, revenue is recognized in:',choices:['April, when cash is received','March, when the service is performed','Either month, at management’s discretion'],answer:1,why:'Accrual accounting recognizes revenue when the performance obligation is satisfied, not when cash moves. March gets the revenue; April merely converts a receivable to cash.'},
+{id:'M03',unit:'FSA-bootcamp',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A gym collects $1,200 in January for a 12-month membership. Immediately after collection, the gym reports:',choices:['$1,200 of revenue','A $1,200 receivable','A $1,200 liability (unearned revenue)'],answer:2,why:'Cash received before the service is delivered creates an obligation — unearned revenue, a liability. Revenue is recognized $100 per month as the service is provided.'},
+{id:'M04',unit:'FSA-bootcamp',topic:'Accounting Mechanics',concept:'Deferrals',stem:'A company pays $6,000 on July 1 for one year of insurance. At year-end (Dec 31), the adjusting entry recognizes insurance expense of:',choices:['$6,000','$3,000','$500'],answer:1,why:'Six of twelve months have expired: $6,000 × 6/12 = $3,000 moves from the prepaid asset to expense. The remaining $3,000 stays on the balance sheet as prepaid insurance.'},
+{id:'M05',unit:'FSA-bootcamp',topic:'Accounting Mechanics',concept:'Statement links',stem:'Net income for the period, less dividends declared, flows into which balance sheet account?',choices:['Contributed capital','Accumulated other comprehensive income','Retained earnings'],answer:2,why:'Retained earnings is the bridge between the income statement and the balance sheet: ending RE = beginning RE + net income − dividends declared.'},
 // ---- Income Statement ----
-{id:'I01',topic:'Income Statement',concept:'Revenue recognition',stem:'Under the converged revenue standard, revenue is recognized when:',choices:['Cash is collected from the customer','The contract is signed','The entity satisfies a performance obligation by transferring control of the good or service'],answer:2,why:'The five-step model culminates in recognition as performance obligations are satisfied — control transfers to the customer. Cash timing and contract signing are neither necessary nor sufficient.'},
-{id:'I02',topic:'Income Statement',concept:'Margins',stem:'Revenue is $500,000 and cost of goods sold is $320,000. Gross profit margin is closest to:',choices:['36%','64%','56%'],answer:0,why:'Gross profit = 500 − 320 = $180,000. Margin = 180/500 = 36%. (64% is the COGS ratio — a classic trap of answering the complement.)'},
-{id:'I03',topic:'Income Statement',concept:'Classification',stem:'For a manufacturing company, interest expense is most appropriately classified as:',choices:['An operating expense','A non-operating item','A component of cost of goods sold'],answer:1,why:'For non-financial firms, interest arises from financing decisions, not operations, so it sits below operating income. (For banks, interest IS operating — a distinction L1 likes to test.)'},
-{id:'I04',topic:'Income Statement',concept:'Depreciation',stem:'Equipment costs $60,000 with an estimated salvage value of $10,000 and a 5-year useful life. Annual straight-line depreciation is:',choices:['$12,000','$14,000','$10,000'],answer:2,why:'(Cost − salvage) / life = (60,000 − 10,000)/5 = $10,000. Forgetting to subtract salvage gives the $12,000 distractor.'},
-{id:'I05',topic:'Income Statement',concept:'Net income',stem:'Revenue $800, COGS $450, SG&A $150, interest expense $40, tax rate 25%. Net income is closest to:',choices:['$160','$120','$140'],answer:1,why:'EBT = 800 − 450 − 150 − 40 = 160. Tax = 160 × 25% = 40. Net income = 120. The $160 distractor is pre-tax income; $140 forgets SG&A’s full effect... always run the waterfall in order.'},
+{id:'I01',unit:'FSA',topic:'Income Statement',concept:'Revenue recognition',stem:'Under the converged revenue standard, revenue is recognized when:',choices:['Cash is collected from the customer','The contract is signed','The entity satisfies a performance obligation by transferring control of the good or service'],answer:2,why:'The five-step model culminates in recognition as performance obligations are satisfied — control transfers to the customer. Cash timing and contract signing are neither necessary nor sufficient.'},
+{id:'I02',unit:'FSA',topic:'Income Statement',concept:'Margins',stem:'Revenue is $500,000 and cost of goods sold is $320,000. Gross profit margin is closest to:',choices:['36%','64%','56%'],answer:0,why:'Gross profit = 500 − 320 = $180,000. Margin = 180/500 = 36%. (64% is the COGS ratio — a classic trap of answering the complement.)'},
+{id:'I03',unit:'FSA',topic:'Income Statement',concept:'Classification',stem:'For a manufacturing company, interest expense is most appropriately classified as:',choices:['An operating expense','A non-operating item','A component of cost of goods sold'],answer:1,why:'For non-financial firms, interest arises from financing decisions, not operations, so it sits below operating income. (For banks, interest IS operating — a distinction L1 likes to test.)'},
+{id:'I04',unit:'FSA',topic:'Income Statement',concept:'Depreciation',stem:'Equipment costs $60,000 with an estimated salvage value of $10,000 and a 5-year useful life. Annual straight-line depreciation is:',choices:['$12,000','$14,000','$10,000'],answer:2,why:'(Cost − salvage) / life = (60,000 − 10,000)/5 = $10,000. Forgetting to subtract salvage gives the $12,000 distractor.'},
+{id:'I05',unit:'FSA',topic:'Income Statement',concept:'Net income',stem:'Revenue $800, COGS $450, SG&A $150, interest expense $40, tax rate 25%. Net income is closest to:',choices:['$160','$120','$140'],answer:1,why:'EBT = 800 − 450 − 150 − 40 = 160. Tax = 160 × 25% = 40. Net income = 120. The $160 distractor is pre-tax income; $140 forgets SG&A’s full effect... always run the waterfall in order.'},
 // ---- Balance Sheet ----
-{id:'B01',topic:'Balance Sheet',concept:'Classification',stem:'A note payable due in eight months is reported as:',choices:['A current liability','A non-current liability','An offset against cash'],answer:0,why:'Current means due within one year (or the operating cycle, if longer). Eight months qualifies. Netting liabilities against cash is prohibited absent a legal right of offset.'},
-{id:'B02',topic:'Balance Sheet',concept:'Working capital',stem:'Current assets are $240,000 and current liabilities are $150,000. Working capital is:',choices:['$390,000','$90,000','1.6'],answer:1,why:'Working capital = CA − CL = 240 − 150 = $90,000. The 1.6 distractor is the current ratio — same inputs, different measure. Know which one the question asks for.'},
-{id:'B03',topic:'Balance Sheet',concept:'Liquidity ratios',stem:'Cash $40,000, receivables $80,000, inventory $60,000, prepaid expenses $20,000, current liabilities $100,000. The quick ratio is closest to:',choices:['2.0','1.2','1.8'],answer:1,why:'Quick ratio = (cash + short-term investments + receivables)/CL = (40+80)/100 = 1.2. Inventory and prepaids are excluded — they’re the least reliably convertible to cash. 2.0 is the current ratio.'},
-{id:'B04',topic:'Balance Sheet',concept:'Retained earnings',stem:'Beginning retained earnings $500,000; net income $120,000; dividends declared $30,000. Ending retained earnings is:',choices:['$590,000','$620,000','$650,000'],answer:0,why:'500 + 120 − 30 = $590,000. Declared is what matters — a declared-but-unpaid dividend has already left retained earnings and sits as a payable.'},
-{id:'B05',topic:'Balance Sheet',concept:'Measurement',stem:'Under the cost model, property, plant & equipment is carried on the balance sheet at:',choices:['Current market value','Replacement cost','Historical cost less accumulated depreciation (and any impairment)'],answer:2,why:'PP&E under the cost model is historical cost minus accumulated depreciation and impairment. Its book value can be far from market value — a core limitation of the balance sheet worth internalizing early.'},
+{id:'B01',unit:'FSA',topic:'Balance Sheet',concept:'Classification',stem:'A note payable due in eight months is reported as:',choices:['A current liability','A non-current liability','An offset against cash'],answer:0,why:'Current means due within one year (or the operating cycle, if longer). Eight months qualifies. Netting liabilities against cash is prohibited absent a legal right of offset.'},
+{id:'B02',unit:'FSA',topic:'Balance Sheet',concept:'Working capital',stem:'Current assets are $240,000 and current liabilities are $150,000. Working capital is:',choices:['$390,000','$90,000','1.6'],answer:1,why:'Working capital = CA − CL = 240 − 150 = $90,000. The 1.6 distractor is the current ratio — same inputs, different measure. Know which one the question asks for.'},
+{id:'B03',unit:'FSA',topic:'Balance Sheet',concept:'Liquidity ratios',stem:'Cash $40,000, receivables $80,000, inventory $60,000, prepaid expenses $20,000, current liabilities $100,000. The quick ratio is closest to:',choices:['2.0','1.2','1.8'],answer:1,why:'Quick ratio = (cash + short-term investments + receivables)/CL = (40+80)/100 = 1.2. Inventory and prepaids are excluded — they’re the least reliably convertible to cash. 2.0 is the current ratio.'},
+{id:'B04',unit:'FSA',topic:'Balance Sheet',concept:'Retained earnings',stem:'Beginning retained earnings $500,000; net income $120,000; dividends declared $30,000. Ending retained earnings is:',choices:['$590,000','$620,000','$650,000'],answer:0,why:'500 + 120 − 30 = $590,000. Declared is what matters — a declared-but-unpaid dividend has already left retained earnings and sits as a payable.'},
+{id:'B05',unit:'FSA',topic:'Balance Sheet',concept:'Measurement',stem:'Under the cost model, property, plant & equipment is carried on the balance sheet at:',choices:['Current market value','Replacement cost','Historical cost less accumulated depreciation (and any impairment)'],answer:2,why:'PP&E under the cost model is historical cost minus accumulated depreciation and impairment. Its book value can be far from market value — a core limitation of the balance sheet worth internalizing early.'},
 // ---- Cash Flow ----
-{id:'C01',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash paid to suppliers for inventory is classified as:',choices:['Operating cash flow','Investing cash flow','Financing cash flow'],answer:0,why:'Day-to-day trading activity — buying inventory, paying wages, collecting from customers — is operating. Investing is long-term assets; financing is capital providers.'},
-{id:'C02',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash used to purchase manufacturing equipment is classified as:',choices:['Investing outflow','Operating outflow','Financing outflow'],answer:0,why:'Acquiring long-lived productive assets is investing activity. Note the mismatch this creates: the cash leaves in year 1 (CFI), while the income statement spreads the cost over years as depreciation.'},
-{id:'C03',topic:'Cash Flow Statement',concept:'Classification',stem:'Proceeds from issuing bonds are classified as:',choices:['Operating inflow','Investing inflow','Financing inflow'],answer:2,why:'Transactions with capital providers — issuing or retiring debt and equity, paying dividends — are financing. The later interest payments, however, are operating under U.S. GAAP (IFRS allows a choice).'},
-{id:'C04',topic:'Cash Flow Statement',concept:'Indirect method',stem:'The indirect method of presenting operating cash flow begins with:',choices:['Cash collected from customers','Revenue','Net income'],answer:2,why:'Indirect CFO starts at net income and reverses out non-cash items (depreciation) and working-capital accruals to arrive at cash. The direct method starts from cash receipts instead — same CFO total.'},
-{id:'C05',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts receivable during the period is:',choices:['Added to net income','Subtracted from net income','Ignored — receivables are not cash'],answer:1,why:'Rising receivables mean some recognized revenue wasn’t collected in cash yet, so net income overstates cash — subtract the increase. The general rule: asset up → cash down.'}
+{id:'C01',unit:'FSA',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash paid to suppliers for inventory is classified as:',choices:['Operating cash flow','Investing cash flow','Financing cash flow'],answer:0,why:'Day-to-day trading activity — buying inventory, paying wages, collecting from customers — is operating. Investing is long-term assets; financing is capital providers.'},
+{id:'C02',unit:'FSA',topic:'Cash Flow Statement',concept:'Classification',stem:'Cash used to purchase manufacturing equipment is classified as:',choices:['Investing outflow','Operating outflow','Financing outflow'],answer:0,why:'Acquiring long-lived productive assets is investing activity. Note the mismatch this creates: the cash leaves in year 1 (CFI), while the income statement spreads the cost over years as depreciation.'},
+{id:'C03',unit:'FSA',topic:'Cash Flow Statement',concept:'Classification',stem:'Proceeds from issuing bonds are classified as:',choices:['Operating inflow','Investing inflow','Financing inflow'],answer:2,why:'Transactions with capital providers — issuing or retiring debt and equity, paying dividends — are financing. The later interest payments, however, are operating under U.S. GAAP (IFRS allows a choice).'},
+{id:'C04',unit:'FSA',topic:'Cash Flow Statement',concept:'Indirect method',stem:'The indirect method of presenting operating cash flow begins with:',choices:['Cash collected from customers','Revenue','Net income'],answer:2,why:'Indirect CFO starts at net income and reverses out non-cash items (depreciation) and working-capital accruals to arrive at cash. The direct method starts from cash receipts instead — same CFO total.'},
+{id:'C05',unit:'FSA',topic:'Cash Flow Statement',concept:'Indirect method',stem:'Under the indirect method, an increase in accounts receivable during the period is:',choices:['Added to net income','Subtracted from net income','Ignored — receivables are not cash'],answer:1,why:'Rising receivables mean some recognized revenue wasn’t collected in cash yet, so net income overstates cash — subtract the increase. The general rule: asset up → cash down.'}
 ];
 
 let QUESTIONS = SEED_QUESTIONS.slice();
 
 function mapRemoteQuestion(row){
-  return { id: row.id, topic: row.topic, concept: row.concept, stem: row.stem,
+  return { id: row.id, unit: row.unit, topic: row.topic, concept: row.concept, stem: row.stem,
            choices: row.choices, answer: row.answer, why: row.why };
 }
 
@@ -262,6 +275,58 @@ if (storageOK){
 // v1→v2 schema migration: backfill updatedAt on any card that predates sync.
 Object.values(S.cards).forEach(c => { if (c.updatedAt === undefined) c.updatedAt = 0; });
 function save(){ if (storageOK){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} } }
+
+/* ================= UNIT SELECTION =================
+   Which units (Quant, Economics, FSA, ...) the Drill tab draws NEW questions
+   from. Persisted across sessions. Multi-select; "All" is just the state where
+   every unit happens to be selected, not a separate mode. */
+const UNITS_KEY = 'ledger-drill-selected-units';
+let selectedUnits = new Set();   // populated by loadSelectedUnits() once QUESTIONS is ready
+let focusMode = false;           // deliberately NOT persisted -- see below, and toggle wiring
+
+function allUnitNames(){ return [...new Set(QUESTIONS.map(q => q.unit))]; }
+
+function getUnits(){
+  const unseenByUnit = new Map();
+  QUESTIONS.forEach(q => {
+    if (!unseenByUnit.has(q.unit)) unseenByUnit.set(q.unit, 0);
+    if (!S.cards[q.id] || S.cards[q.id].box === 0) unseenByUnit.set(q.unit, unseenByUnit.get(q.unit) + 1);
+  });
+  return [...unseenByUnit.entries()].map(([unit, unseen]) => ({ unit, unseen }));
+}
+
+function loadSelectedUnits(){
+  if (storageOK){
+    try {
+      const raw = localStorage.getItem(UNITS_KEY);
+      if (raw){
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr) && arr.length) return new Set(arr);
+      }
+    } catch(e){ /* fall through to default */ }
+  }
+  return new Set(allUnitNames());   // default: every unit selected ("All")
+}
+
+function saveSelectedUnits(unitNames){
+  selectedUnits = new Set(unitNames);
+  if (storageOK){ try{ localStorage.setItem(UNITS_KEY, JSON.stringify([...selectedUnits])); }catch(e){} }
+}
+
+function toggleUnit(unit){
+  const next = new Set(selectedUnits);
+  if (next.has(unit)) next.delete(unit); else next.add(unit);
+  saveSelectedUnits([...next]);
+}
+
+function isUnitSelected(unit){
+  // An empty selection fails OPEN (behaves like "All") rather than silently
+  // producing zero new questions forever if every chip gets deselected --
+  // that's a confusing dead end for a student to find themselves in, not a
+  // deliberate "study nothing" mode.
+  if (!selectedUnits || selectedUnits.size === 0) return true;
+  return selectedUnits.has(unit);
+}
 
 const QCACHE_KEY = 'ledger-drill-questions-cache-v1';
 
@@ -297,8 +362,18 @@ function isDue(qid){
   if (!c || c.box === 0) return false;
   return (today() - c.last) >= (INTERVALS[c.box] || 30);
 }
-function dueList(){ return QUESTIONS.filter(q => isDue(q.id)); }
-function newList(){ return QUESTIONS.filter(q => !S.cards[q.id] || S.cards[q.id].box === 0); }
+function dueList(){
+  // Due reviews are deliberately drawn from EVERY unit regardless of the
+  // Drill tab's unit selection. Spaced repetition works by interleaving old
+  // material back in while you study something new -- if "I'm studying Quant
+  // today" silently hid a due FSA review, the schedule would quietly stop
+  // protecting material you already worked to learn. Focus mode is the one
+  // sanctioned override: an explicit, never-persisted opt-in for
+  // pre-checkpoint cramming, not something a normal unit selection should do
+  // by accident.
+  return QUESTIONS.filter(q => isDue(q.id) && (!focusMode || isUnitSelected(q.unit)));
+}
+function newList(){ return QUESTIONS.filter(q => (!S.cards[q.id] || S.cards[q.id].box === 0) && isUnitSelected(q.unit)); }
 
 function record(qid, correct){
   const c = card(qid);
@@ -435,6 +510,7 @@ async function onSignedIn(){
   // with no later retry -- this call is that retry, keyed off a state we know
   // is genuinely authenticated rather than a session check that may fire early.
   await loadQuestions();
+  selectedUnits = loadSelectedUnits();
   await maybeImportV1Progress();
   await mergeRemoteCardState();
   refreshStats();
@@ -468,6 +544,30 @@ function render(tab){
   if (tab==='data')  renderData();
 }
 
+/* ================= UNIT CHIPS (shared: Drill + Stats) ================= */
+function renderUnitChips(){
+  const units = getUnits();
+  const all = allUnitNames();
+  const allOn = all.length > 0 && all.every(u => selectedUnits.has(u));
+  let html = '<div class="chips">';
+  html += `<button type="button" class="chip${allOn ? ' on' : ''}" data-all="1">All</button>`;
+  units.forEach(({ unit, unseen }) => {
+    const on = selectedUnits.has(unit);
+    html += `<button type="button" class="chip${on ? ' on' : ''}" data-unit="${esc(unit)}">${esc(unit)}<span class="n">${unseen}</span></button>`;
+  });
+  html += '</div>';
+  return html;
+}
+function wireUnitChips(onChange){
+  document.querySelectorAll('.chip').forEach(el => {
+    el.addEventListener('click', () => {
+      if (el.dataset.all) saveSelectedUnits(allUnitNames());
+      else toggleUnit(el.dataset.unit);
+      onChange();
+    });
+  });
+}
+
 /* ================= DRILL ================= */
 let session = null; // {queue, i, right, topics:{}}
 
@@ -486,18 +586,23 @@ function buildSession(){
 function renderDrillHome(){
   const due = dueList().length, fresh = Math.min(newList().length, NEW_PER_SESSION);
   const n = Math.min(due + fresh, SESSION_CAP);
-  if (n === 0){
-    panel.innerHTML = `<div class="card empty"><h2>Nothing due.</h2>
-      <p>Every card is scheduled out. Come back when the intervals mature —<br>that's the system working, not you slacking.</p></div>`;
-    return;
-  }
-  panel.innerHTML = `<div class="card empty">
-    <h2>${n} question${n===1?'':'s'} queued</h2>
-    <p>${due} review${due===1?'':'s'} due · ${fresh} new</p>
-    <div class="actions" style="justify-content:center;margin-top:22px">
-      <button class="btn" id="start">Begin session</button>
-    </div></div>`;
-  $('#start').addEventListener('click', ()=>{ session = buildSession(); renderQuestion(); });
+  const chipsHtml = renderUnitChips();
+  const focusHtml = `<label class="focus-toggle"><input type="checkbox" id="focus-toggle"${focusMode ? ' checked' : ''}>
+    Focus (reviews from this unit only — pre-checkpoint use)</label>`;
+  const bodyHtml = n === 0
+    ? `<div class="card empty"><h2>Nothing due.</h2>
+        <p>Every card is scheduled out. Come back when the intervals mature —<br>that's the system working, not you slacking.</p></div>`
+    : `<div class="card empty">
+        <h2>${n} question${n===1?'':'s'} queued</h2>
+        <p>${due} review${due===1?'':'s'} due · ${fresh} new</p>
+        <div class="actions" style="justify-content:center;margin-top:22px">
+          <button class="btn" id="start">Begin session</button>
+        </div></div>`;
+  panel.innerHTML = chipsHtml + focusHtml + bodyHtml;
+  wireUnitChips(renderDrillHome);
+  $('#focus-toggle').addEventListener('change', e => { focusMode = e.target.checked; renderDrillHome(); });
+  const startBtn = $('#start');
+  if (startBtn) startBtn.addEventListener('click', ()=>{ session = buildSession(); renderQuestion(); });
 }
 
 function renderQuestion(){
@@ -589,7 +694,7 @@ function renderStats(){
   });
 
   const concepts = {};
-  QUESTIONS.forEach(q=>{
+  QUESTIONS.filter(q => isUnitSelected(q.unit)).forEach(q=>{
     const k = q.topic+' · '+q.concept;
     if (!concepts[k]) concepts[k] = {n:0,r:0,label:q.concept,topic:q.topic};
     const c = S.cards[q.id];
@@ -611,10 +716,11 @@ function renderStats(){
 
   panel.innerHTML = `<div class="card">
     <h3 class="section">Accuracy by topic — lifetime attempts</h3>${barHtml}
-    <h3 class="section">Concept map</h3><div class="heat">${heatHtml}</div>
+    <h3 class="section">Concept map</h3>${renderUnitChips()}<div class="heat">${heatHtml}</div>
     <div class="legend">accuracy:<i style="background:var(--g1)"></i>&lt;40<i style="background:var(--g2)"></i>40–59<i style="background:var(--g3)"></i>60–79<i style="background:var(--g4)"></i>80+</div>
     <h3 class="section">Scheduling state — cards per box (Box 5 = 30-day interval)</h3>
     <div class="boxes">${boxHtml}</div></div>`;
+  wireUnitChips(renderStats);
 }
 
 /* ================= BANK ================= */
@@ -684,6 +790,7 @@ function renderData(){
   const { data: { session } } = await sb.auth.getSession();
   currentUser = session ? session.user : null;
   await loadQuestions();
+  selectedUnits = loadSelectedUnits();
   renderAuthUI();
   refreshStats();
   renderDrillHome();
